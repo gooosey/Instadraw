@@ -7,19 +7,11 @@ import keyboard
 with open("points.json", "r") as f:
     points = json.load(f)
 
-# Get image bounds - optimized to use single pass
-min_x = min_y = float('inf')
-max_x = max_y = float('-inf')
-for x, y in points:
-    if x < min_x:
-        min_x = x
-    if x > max_x:
-        max_x = x
-    if y < min_y:
-        min_y = y
-    if y > max_y:
-        max_y = y
-
+# Get image bounds
+xs = [p[0] for p in points]
+ys = [p[1] for p in points]
+min_x, max_x = min(xs), max(xs)
+min_y, max_y = min(ys), max(ys)
 img_width = max_x - min_x
 img_height = max_y - min_y
 
@@ -46,30 +38,13 @@ scale = min(scale_x, scale_y)
 
 # Fail-safe & pause 
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.001  # Reduced from 0.005 for faster execution
+pyautogui.PAUSE = 0.005
 
-# Pre-calculate all coordinates for better performance
-print(f"📊 Processing {len(points)} points...")
-start_time = time.time()
+for (x,y) in points:
+    draw_x = int((x - min_x) * scale + offset_x)
+    draw_y = int((y - min_y) * scale + offset_y)
 
-coordinates = [
-    (int((x - min_x) * scale + offset_x), int((y - min_y) * scale + offset_y))
-    for x, y in points
-]
+    pyautogui.moveTo(draw_x, draw_y)
+    pyautogui.click()
 
-prep_time = time.time() - start_time
-print(f"⚡ Coordinates calculated in {prep_time:.2f} seconds")
-print("🖌️  Starting to draw...")
-
-draw_start = time.time()
-# Use click with coordinates directly - faster than moveTo + click
-for draw_x, draw_y in coordinates:
-    pyautogui.click(draw_x, draw_y)
-
-draw_time = time.time() - draw_start
-total_time = time.time() - start_time
-
-print(f"✅ Done!")
-print(f"⏱️  Drawing time: {draw_time:.2f} seconds")
-print(f"⏱️  Total time: {total_time:.2f} seconds")
-print(f"📈 Average time per point: {(draw_time/len(points)*1000):.2f} ms")
+print("✅ Done!")
